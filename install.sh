@@ -8,7 +8,7 @@
 # Created: 2026-03-11
 # Project: PHANTOM OSINT Terminal
 # Website: https://dectuple.com/phantom-osint-terminal
-# Version: 2.0.0
+# Version: 1.0.0
 # Maintainer: Dectuple Solution
 # Contributors: Open Source Community
 # License: MIT License
