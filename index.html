@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PHANTOM — OSINT Intelligence Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#020b12;--surface:#050f18;--card:#071520;--border:#0d2d40;--accent:#00d4ff;--accent2:#00ff9d;--accent3:#ff3e6c;--warn:#ffb800;--text:#c8e8f0;--muted:#3d6878;--glow:0 0 20px rgba(0,212,255,.3);--glow2:0 0 20px rgba(0,255,157,.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;z-index:1}
+.wrap{position:relative;z-index:2;max-width:1100px;margin:0 auto;padding:0 24px}
+header{border-bottom:1px solid var(--border);padding:18px 0;background:linear-gradient(180deg,rgba(0,20,35,.95) 0%,transparent 100%);position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.header-inner{display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Orbitron',monospace;font-size:26px;font-weight:900;letter-spacing:8px;color:var(--accent);text-shadow:var(--glow)}
+.logo span{color:var(--accent2)}
+.tagline{font-family:'Share Tech Mono';font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase}
+.status-bar{display:flex;gap:14px;align-items:center}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--accent2);box-shadow:0 0 8px var(--accent2);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status-text{font-family:'Share Tech Mono';font-size:11px;color:var(--muted)}
+main{padding:40px 0}
+.hero{text-align:center;margin-bottom:40px}
+.hero-title{font-family:'Orbitron',monospace;font-size:clamp(16px,3vw,24px);font-weight:700;color:var(--accent);letter-spacing:4px;text-shadow:var(--glow);margin-bottom:10px}
+.hero-sub{color:var(--muted);font-size:15px;letter-spacing:1px}
+.tool-strip{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:36px}
+.tool-badge{font-family:'Share Tech Mono';font-size:11px;padding:5px 12px;border-radius:2px;border:1px solid;letter-spacing:1px;transition:all .3s}
+.tool-badge.ok{border-color:var(--accent2);color:var(--accent2);background:rgba(0,255,157,.05)}
+.tool-badge.missing{border-color:var(--accent3);color:var(--accent3);background:rgba(255,62,108,.05)}
+.tool-badge.loading{border-color:var(--muted);color:var(--muted)}
+.input-panel{background:var(--card);border:1px solid var(--border);border-top:2px solid var(--accent);padding:28px;margin-bottom:28px;position:relative;overflow:hidden}
+.input-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:sweep 3s ease-in-out infinite}
+@keyframes sweep{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+.panel-label{font-family:'Share Tech Mono';font-size:10px;color:var(--accent);letter-spacing:3px;margin-bottom:18px;text-transform:uppercase}
+.type-selector{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);overflow:hidden}
+.type-btn{flex:1;padding:11px 8px;background:transparent;border:none;color:var(--muted);cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;letter-spacing:2px;text-transform:uppercase;transition:all .2s;border-right:1px solid var(--border)}
+.type-btn:last-child{border-right:none}
+.type-btn:hover{color:var(--text);background:rgba(0,212,255,.05)}
+.type-btn.active{color:var(--accent);background:rgba(0,212,255,.1);box-shadow:inset 0 -2px 0 var(--accent)}
+.input-row{display:flex;gap:10px;align-items:stretch}
+.target-input{flex:1;background:rgba(0,0,0,.5);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono';font-size:14px;padding:13px 16px;outline:none;transition:border-color .3s,box-shadow .3s}
+.target-input:focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--glow)}
+.target-input::placeholder{color:var(--muted)}
+.scan-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:13px 28px;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:3px;cursor:pointer;text-transform:uppercase;transition:all .3s}
+.scan-btn:hover{background:var(--accent);color:var(--bg);box-shadow:var(--glow)}
+.scan-btn:disabled{opacity:.4;cursor:not-allowed}
+.scan-btn.scanning{animation:btnpulse 1s ease-in-out infinite}
+@keyframes btnpulse{0%,100%{border-color:var(--accent)}50%{border-color:var(--accent2)}}
+.hint-row{margin-top:10px;font-family:'Share Tech Mono';font-size:11px;color:var(--muted)}
+.progress-panel{background:var(--card);border:1px solid var(--border);padding:22px;margin-bottom:22px;display:none}
+.progress-panel.show{display:block}
+.progress-label{font-family:'Share Tech Mono';font-size:12px;color:var(--accent);margin-bottom:10px}
+.progress-bar-wrap{background:rgba(0,0,0,.5);height:3px;overflow:hidden;margin-bottom:10px}
+.progress-bar{height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .5s;animation:progFlow 2s ease-in-out infinite}
+@keyframes progFlow{0%{filter:brightness(1)}50%{filter:brightness(1.5)}100%{filter:brightness(1)}}
+.progress-status{font-family:'Share Tech Mono';font-size:11px;color:var(--muted)}
+.progress-log{margin-top:10px;max-height:70px;overflow:hidden}
+.log-line{font-family:'Share Tech Mono';font-size:10px;color:var(--muted);opacity:.7}
+.log-line.new{color:var(--accent2);opacity:1}
+#results{display:none}
+#results.show{display:block}
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.results-title{font-family:'Orbitron';font-size:15px;color:var(--accent2);letter-spacing:3px}
+.results-meta{font-family:'Share Tech Mono';font-size:11px;color:var(--muted)}
+
+/* EXPORT BAR */
+.export-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:24px;padding:16px 20px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent2)}
+.export-label{font-family:'Share Tech Mono';font-size:11px;color:var(--muted);letter-spacing:2px;margin-right:6px;white-space:nowrap}
+.export-btn{font-family:'Share Tech Mono';font-size:11px;padding:7px 18px;border:1px solid;cursor:pointer;letter-spacing:1px;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:transparent}
+.export-btn.json{border-color:var(--accent);color:var(--accent)}
+.export-btn.json:hover{background:var(--accent);color:var(--bg)}
+.export-btn.csv{border-color:var(--accent2);color:var(--accent2)}
+.export-btn.csv:hover{background:var(--accent2);color:var(--bg)}
+.export-btn.txt{border-color:var(--warn);color:var(--warn)}
+.export-btn.txt:hover{background:var(--warn);color:var(--bg)}
+
+.results-grid{display:grid;gap:14px}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.stat-box{background:var(--card);border:1px solid var(--border);padding:18px;text-align:center}
+.stat-num{font-family:'Orbitron';font-size:30px;font-weight:900;color:var(--accent)}
+.stat-label{font-family:'Share Tech Mono';font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:5px}
+.r-card{background:var(--card);border:1px solid var(--border);overflow:hidden;transition:border-color .3s}
+.r-card:hover{border-color:var(--accent)}
+.r-card-head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);cursor:pointer;background:rgba(0,0,0,.2)}
+.r-card-title{font-family:'Orbitron';font-size:12px;font-weight:700;letter-spacing:2px}
+.r-card-badge{font-family:'Share Tech Mono';font-size:10px;padding:3px 9px;letter-spacing:1px}
+.badge-found{color:var(--accent2);border:1px solid var(--accent2);background:rgba(0,255,157,.05)}
+.badge-info{color:var(--accent);border:1px solid var(--accent);background:rgba(0,212,255,.05)}
+.badge-warn{color:var(--warn);border:1px solid var(--warn);background:rgba(255,184,0,.05)}
+.badge-error{color:var(--accent3);border:1px solid var(--accent3);background:rgba(255,62,108,.05)}
+.r-card-body{padding:18px}
+.found-list{list-style:none}
+.found-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Share Tech Mono';font-size:12px}
+.found-item:last-child{border-bottom:none}
+.found-icon{color:var(--accent2);font-size:13px;flex-shrink:0}
+.found-link{color:var(--accent);text-decoration:none;word-break:break-all}
+.found-link:hover{color:var(--accent2);text-decoration:underline}
+.found-text{color:var(--text);word-break:break-all}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.info-item{background:rgba(0,0,0,.3);border:1px solid rgba(0,212,255,.1);padding:10px 14px}
+.info-key{font-family:'Share Tech Mono';font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px}
+.info-val{font-family:'Share Tech Mono';font-size:12px;color:var(--accent2)}
+.raw-toggle{margin-top:10px;font-family:'Share Tech Mono';font-size:11px;color:var(--muted);cursor:pointer;letter-spacing:1px;background:none;border:none;padding:4px 0}
+.raw-toggle:hover{color:var(--text)}
+.raw-output{display:none;margin-top:10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,212,255,.1);padding:12px;font-family:'Share Tech Mono';font-size:10px;color:rgba(200,232,240,.6);white-space:pre-wrap;word-break:break-all;max-height:280px;overflow-y:auto;line-height:1.6}
+.raw-output.show{display:block}
+.empty-state{text-align:center;padding:32px 20px;font-family:'Share Tech Mono';font-size:12px;color:var(--muted)}
+.legal-banner{background:rgba(255,184,0,.05);border:1px solid rgba(255,184,0,.2);border-left:3px solid var(--warn);padding:10px 14px;margin-bottom:28px;font-family:'Share Tech Mono';font-size:11px;color:rgba(255,184,0,.8);letter-spacing:.5px;line-height:1.6}
+.collapsible{display:none}
+.collapsible.open{display:block}
+.chevron{transition:transform .3s;display:inline-block}
+.chevron.open{transform:rotate(180deg)}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border)}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+@media(max-width:600px){.stats-row{grid-template-columns:1fr}.input-row{flex-direction:column}.type-selector{flex-wrap:wrap}.export-bar{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap header-inner">
+    <div>
+      <div class="logo">PH<span>A</span>NTOM</div>
+      <div class="tagline">Open Source Intelligence Terminal v1.0</div>
+    </div>
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <div class="status-text" id="sysStatus">SYSTEM ONLINE</div>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-title">INTELLIGENCE GATHERING SYSTEM</div>
+    <div class="hero-sub">Search phone numbers, emails and usernames across the public internet</div>
+  </div>
+
+  <div class="legal-banner">
+    ⚠ AUTHORIZED USE ONLY — This tool uses publicly available data (OSINT). Only investigate your own accounts or targets with explicit written consent. Unauthorized surveillance is illegal.
+  </div>
+
+  <div class="tool-strip" id="toolStrip">
+    <div class="tool-badge loading">holehe ···</div>
+    <div class="tool-badge loading">h8mail ···</div>
+    <div class="tool-badge loading">theHarvester ···</div>
+    <div class="tool-badge loading">phoneinfoga ···</div>
+    <div class="tool-badge loading">sherlock ···</div>
+    <div class="tool-badge loading">maigret ···</div>
+  </div>
+
+  <div class="input-panel">
+    <div class="panel-label">// TARGET ACQUISITION</div>
+    <div class="type-selector">
+      <button class="type-btn active" onclick="setType('email',this)">📧 Email</button>
+      <button class="type-btn" onclick="setType('phone',this)">📱 Phone</button>
+      <button class="type-btn" onclick="setType('username',this)">👤 Username</button>
+    </div>
+    <div class="input-row">
+      <input class="target-input" id="targetInput" type="text"
+        placeholder="Enter email address..."
+        onkeydown="if(event.key==='Enter')startScan()"/>
+      <button class="scan-btn" id="scanBtn" onclick="startScan()">SCAN</button>
+    </div>
+    <div class="hint-row" id="inputHint">FORMAT: user@domain.com — searches holehe, h8mail, theHarvester</div>
+  </div>
+
+  <div class="progress-panel" id="progressPanel">
+    <div class="progress-label">// SCAN IN PROGRESS</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:30%"></div></div>
+    <div class="progress-status" id="progressStatus">Initializing...</div>
+    <div class="progress-log" id="progressLog"></div>
+  </div>
+
+  <div id="results">
+    <div class="results-header">
+      <div class="results-title">// SCAN RESULTS</div>
+      <div class="results-meta" id="resultsMeta"></div>
+    </div>
+
+    <!-- EXPORT BAR -->
+    <div class="export-bar" id="exportBar" style="display:none">
+      <span class="export-label">EXPORT:</span>
+      <a class="export-btn json" id="exportJson" href="#" onclick="doExport('json');return false;">⬇ JSON</a>
+      <a class="export-btn csv"  id="exportCsv"  href="#" onclick="doExport('csv');return false;">⬇ CSV</a>
+      <a class="export-btn txt"  id="exportTxt"  href="#" onclick="doExport('txt');return false;">⬇ TXT</a>
+    </div>
+
+    <div class="stats-row" id="statsRow"></div>
+    <div class="results-grid" id="resultsGrid"></div>
+  </div>
+</div>
+</main>
+
+<script>
+const API = 'http://localhost:5000/api';
+let currentType = 'email';
+let currentJobId = null;
+let pollInterval = null;
+
+const hints = {
+  email:'FORMAT: user@domain.com — searches holehe, h8mail, theHarvester',
+  phone:'FORMAT: +923001234567 (with country code) — searches phoneinfoga',
+  username:'FORMAT: john_doe — searches sherlock (400+) & maigret (2500+ sites)'
+};
+const placeholders = {
+  email:'Enter email address...',
+  phone:'Enter phone number with country code...',
+  username:'Enter username...'
+};
+
+function setType(type,btn){
+  currentType=type;
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('targetInput').placeholder=placeholders[type];
+  document.getElementById('inputHint').textContent=hints[type];
+}
+
+async function checkTools(){
+  try{
+    const res=await fetch(`${API}/tools`);
+    const tools=await res.json();
+    const strip=document.getElementById('toolStrip');
+    strip.innerHTML='';
+    for(const[name,ok] of Object.entries(tools)){
+      const b=document.createElement('div');
+      b.className=`tool-badge ${ok?'ok':'missing'}`;
+      b.textContent=`${ok?'✓':'✗'} ${name}`;
+      b.title=ok?'Installed & ready':'Not installed — run install_tools.sh';
+      strip.appendChild(b);
+    }
+  }catch(e){
+    document.getElementById('toolStrip').innerHTML='<div class="tool-badge missing">⚠ Backend offline — run: python3 backend/app.py</div>';
+    document.getElementById('sysStatus').textContent='BACKEND OFFLINE';
+  }
+}
+
+async function startScan(){
+  const target=document.getElementById('targetInput').value.trim();
+  if(!target)return;
+  clearResults();
+  document.getElementById('progressPanel').classList.add('show');
+  document.getElementById('progressBar').style.width='15%';
+  document.getElementById('progressStatus').textContent='Submitting scan...';
+  document.getElementById('scanBtn').disabled=true;
+  document.getElementById('scanBtn').classList.add('scanning');
+  document.getElementById('scanBtn').textContent='SCANNING';
+  try{
+    const res=await fetch(`${API}/scan`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:currentType,target})});
+    const data=await res.json();
+    if(data.error){showError(data.error);return;}
+    currentJobId=data.job_id;
+    pollResults();
+  }catch(e){
+    showError('Cannot connect to backend.\n\nMake sure Flask is running:\n  cd ~/phantom/backend\n  python3 app.py');
+  }
+}
+
+function pollResults(){
+  let progress=20;
+  pollInterval=setInterval(async()=>{
+    progress=Math.min(progress+4,90);
+    document.getElementById('progressBar').style.width=progress+'%';
+    try{
+      const res=await fetch(`${API}/status/${currentJobId}`);
+      const data=await res.json();
+      document.getElementById('progressStatus').textContent=data.status;
+      addLogLine(data.status);
+      if(data.status==='complete'){
+        clearInterval(pollInterval);
+        document.getElementById('progressBar').style.width='100%';
+        setTimeout(()=>{
+          document.getElementById('progressPanel').classList.remove('show');
+          renderResults(data);
+          document.getElementById('scanBtn').disabled=false;
+          document.getElementById('scanBtn').classList.remove('scanning');
+          document.getElementById('scanBtn').textContent='SCAN';
+        },700);
+      }
+    }catch(e){}
+  },1500);
+}
+
+function addLogLine(text){
+  const log=document.getElementById('progressLog');
+  const prev=log.querySelector('.log-line.new');
+  if(prev)prev.classList.remove('new');
+  const line=document.createElement('div');
+  line.className='log-line new';
+  line.textContent=`> ${text}`;
+  log.appendChild(line);
+  if(log.children.length>5)log.removeChild(log.firstChild);
+}
+
+function clearResults(){
+  if(pollInterval)clearInterval(pollInterval);
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('resultsGrid').innerHTML='';
+  document.getElementById('statsRow').innerHTML='';
+  document.getElementById('progressLog').innerHTML='';
+  document.getElementById('exportBar').style.display='none';
+  currentJobId=null;
+}
+
+// ── EXPORT ─────────────────────────────────────────────
+function doExport(format){
+  if(!currentJobId)return;
+  window.open(`${API}/export/${format}/${currentJobId}`,'_blank');
+}
+
+// ── RENDER ─────────────────────────────────────────────
+function renderResults(data){
+  const el=document.getElementById('results');
+  el.classList.add('show');
+  document.getElementById('resultsMeta').textContent=`TARGET: ${data.target} | ${data.type.toUpperCase()} | ${new Date().toLocaleTimeString()}`;
+  document.getElementById('resultsGrid').innerHTML='';
+
+  // Show export bar
+  document.getElementById('exportBar').style.display='flex';
+
+  const r=data.results;
+  if(data.type==='email') renderEmail(r);
+  else if(data.type==='phone') renderPhone(r);
+  else if(data.type==='username') renderUsername(r);
+}
+
+function renderEmail(r){
+  let totalFound=0,totalSites=0,breaches=0;
+  const grid=document.getElementById('resultsGrid');
+
+  if(r.holehe){
+    if(r.holehe.error){grid.appendChild(makeCard('holehe','EMAIL ACCOUNTS',r.holehe.error,'error',null));}
+    else{
+      const found=r.holehe.found||[];
+      totalFound+=found.length;
+      totalSites+=(found.length+(r.holehe.not_found||[]).length);
+      grid.appendChild(makeCard('holehe',`EMAIL ACCOUNTS FOUND: ${found.length}`,
+        found.length?listHTML(found,'◆'):empty('No accounts found'),
+        found.length?'found':'info',r.holehe.raw));
+    }
+  }
+  if(r.h8mail){
+    if(r.h8mail.error){grid.appendChild(makeCard('h8mail','BREACH CHECK',r.h8mail.error,'error',null));}
+    else{
+      const br=r.h8mail.breaches||[];
+      breaches=br.length;
+      grid.appendChild(makeCard('h8mail',`DATA BREACHES: ${br.length}`,
+        br.length?listHTML(br,'⚠','var(--accent3)'):empty('No breaches detected'),
+        br.length?'warn':'info',r.h8mail.raw));
+    }
+  }
+  if(r.theHarvester){
+    if(r.theHarvester.error){grid.appendChild(makeCard('theHarvester','DOMAIN RECON',r.theHarvester.error,'error',null));}
+    else{
+      const em=r.theHarvester.emails||[];
+      grid.appendChild(makeCard('theHarvester',`RELATED EMAILS: ${em.length}`,
+        em.length?listHTML(em,'◈'):empty('No related emails found'),
+        em.length?'found':'info',r.theHarvester.raw));
+    }
+  }
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">${totalFound}</div><div class="stat-label">ACCOUNTS FOUND</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:${breaches>0?'var(--accent3)':'var(--accent)'}">${breaches}</div><div class="stat-label">DATA BREACHES</div></div>
+    <div class="stat-box"><div class="stat-num">${totalSites}</div><div class="stat-label">SITES CHECKED</div></div>`;
+}
+
+function renderPhone(r){
+  const grid=document.getElementById('resultsGrid');
+  if(r.number_analysis){
+    const info=r.number_analysis;
+    grid.appendChild(makeCard('Analysis','NUMBER METADATA',infoGridHTML(info),'info',null));
+  }
+  if(r.phoneinfoga){
+    if(r.phoneinfoga.error){grid.appendChild(makeCard('phoneinfoga','CARRIER & REGION',r.phoneinfoga.error,'error',null));}
+    else{
+      const info=r.phoneinfoga.info||{};
+      const body=Object.keys(info).length?infoGridHTML(info):empty('Run phoneinfoga serve for full web interface');
+      grid.appendChild(makeCard('phoneinfoga','CARRIER & REGION INTELLIGENCE',body,'found',r.phoneinfoga.raw));
+    }
+  }
+  const na=r.number_analysis||{};
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-box"><div class="stat-num">1</div><div class="stat-label">NUMBER SCANNED</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">${na.has_country_code?'✓':'✗'}</div><div class="stat-label">INTL FORMAT</div></div>
+    <div class="stat-box"><div class="stat-num">${na.country&&na.country!=='Unknown'?'✓':'?'}</div><div class="stat-label">COUNTRY FOUND</div></div>`;
+}
+
+function renderUsername(r){
+  const grid=document.getElementById('resultsGrid');
+  let sc=0,mc=0;
+  if(r.sherlock){
+    if(r.sherlock.error){grid.appendChild(makeCard('sherlock','SOCIAL ACCOUNTS (400+)',r.sherlock.error,'error',null));}
+    else{
+      const found=r.sherlock.found||[];sc=found.length;
+      grid.appendChild(makeCard('sherlock',`PROFILES FOUND: ${found.length} / 400+ SITES`,
+        found.length?linkListHTML(found,'◆'):empty('No profiles found on 400+ platforms'),
+        found.length?'found':'info',r.sherlock.raw));
+    }
+  }
+  if(r.maigret){
+    if(r.maigret.error){grid.appendChild(makeCard('maigret','DEEP SCAN (2500+)',r.maigret.error,'error',null));}
+    else{
+      const found=r.maigret.found||[];mc=found.length;
+      grid.appendChild(makeCard('maigret',`DEEP SCAN: ${found.length} / 2500+ SITES`,
+        found.length?linkListHTML(found,'◈','var(--accent)'):empty('No matches across 2500+ sites'),
+        found.length?'found':'info',r.maigret.raw));
+    }
+  }
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">${sc}</div><div class="stat-label">SHERLOCK HITS</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--accent)">${mc}</div><div class="stat-label">MAIGRET HITS</div></div>
+    <div class="stat-box"><div class="stat-num">${sc+mc}</div><div class="stat-label">TOTAL PROFILES</div></div>`;
+}
+
+// ── HELPERS ────────────────────────────────────────────
+function listHTML(items,icon,color='var(--accent2)'){
+  return `<ul class="found-list">${items.map(s=>`<li class="found-item"><span class="found-icon" style="color:${color}">${icon}</span><span class="found-text">${esc(s)}</span></li>`).join('')}</ul>`;
+}
+function linkListHTML(items,icon,color='var(--accent2)'){
+  return `<ul class="found-list">${items.map(line=>{
+    const m=line.match(/https?:\/\/[^\s]+/);
+    return `<li class="found-item"><span class="found-icon" style="color:${color}">${icon}</span>${m?`<a class="found-link" href="${m[0]}" target="_blank">${esc(line)}</a>`:`<span class="found-text">${esc(line)}</span>`}</li>`;
+  }).join('')}</ul>`;
+}
+function infoGridHTML(obj){
+  return `<div class="info-grid">${Object.entries(obj).map(([k,v])=>`<div class="info-item"><div class="info-key">${k.replace(/_/g,' ')}</div><div class="info-val">${esc(String(v))}</div></div>`).join('')}</div>`;
+}
+function empty(msg){return `<div class="empty-state">${msg}</div>`;}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+let cidx=0;
+function makeCard(tool,title,bodyHtml,badge,raw){
+  cidx++;
+  const id='c'+cidx;
+  const div=document.createElement('div');
+  div.className='r-card';
+  const colors={found:'var(--accent2)',info:'var(--accent)',warn:'var(--warn)',error:'var(--accent3)'};
+  const labels={found:'● FOUND',info:'● INFO',warn:'⚠ WARN',error:'✗ ERROR'};
+  const isPlain=typeof bodyHtml==='string'&&!bodyHtml.includes('<');
+  div.innerHTML=`
+    <div class="r-card-head" onclick="tc('${id}')">
+      <div>
+        <div style="font-family:'Share Tech Mono';font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:3px">${tool.toUpperCase()}</div>
+        <div class="r-card-title" style="color:${colors[badge]}">${title}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="r-card-badge badge-${badge}">${labels[badge]}</span>
+        <span class="chevron" id="ch${id}">▼</span>
+      </div>
+    </div>
+    <div class="collapsible open r-card-body" id="${id}">
+      ${isPlain?`<div style="font-family:'Share Tech Mono';font-size:11px;color:var(--accent3);line-height:1.8;white-space:pre-wrap">${esc(bodyHtml)}</div>`:bodyHtml}
+      ${raw?`<button class="raw-toggle" onclick="tr(this)">▶ SHOW RAW OUTPUT</button><pre class="raw-output">${esc(raw)}</pre>`:''}
+    </div>`;
+  return div;
+}
+function tc(id){
+  document.getElementById(id).classList.toggle('open');
+  document.getElementById('ch'+id).classList.toggle('open');
+}
+function tr(btn){
+  const pre=btn.nextElementSibling;
+  pre.classList.toggle('show');
+  btn.textContent=pre.classList.contains('show')?'▼ HIDE RAW OUTPUT':'▶ SHOW RAW OUTPUT';
+}
+function showError(msg){
+  document.getElementById('progressPanel').classList.remove('show');
+  document.getElementById('scanBtn').disabled=false;
+  document.getElementById('scanBtn').classList.remove('scanning');
+  document.getElementById('scanBtn').textContent='SCAN';
+  document.getElementById('results').classList.add('show');
+  document.getElementById('resultsGrid').innerHTML='';
+  document.getElementById('resultsGrid').appendChild(makeCard('SYSTEM','CONNECTION ERROR',msg,'error',null));
+}
+checkTools();
+setInterval(checkTools,30000);
+</script>
+</body>
+</html>
